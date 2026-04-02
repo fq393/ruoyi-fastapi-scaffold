@@ -166,6 +166,8 @@ config_key 命名：<模块前缀>.<参数名>
 
 ## 项目初始化后必须修改的配置
 
+### 本地开发 / 混合模式
+
 | 文件 | 字段 | 说明 |
 |------|------|------|
 | `ruoyi-fastapi-backend/.env.dev` | `APP_NAME` | 改为项目名 |
@@ -173,3 +175,12 @@ config_key 命名：<模块前缀>.<参数名>
 | `ruoyi-fastapi-backend/.env.dev` | `LOG_SERVICE_NAME` | 改为项目名 |
 | `ruoyi-fastapi-backend/.env.dev` | `DB_DATABASE` | 改为项目数据库名 |
 | `ruoyi-fastapi-frontend/.env.development` | `VITE_APP_TITLE` | 改为项目名（注意：默认值是 `vfadmin` 不是 `ruoyi`） |
+
+### Docker 全量模式（额外需要）
+
+| 文件 | 需改内容 |
+|------|---------|
+| `docker-compose.my.yml` / `.pg.yml` | 所有 `ruoyi-*` service名、container_name、image名、network名、MYSQL_DATABASE 改为项目名 |
+| `ruoyi-fastapi-backend/.env.dockermy` / `.env.dockerpg` | `APP_NAME`、`LOG_SERVICE_NAME`、`DB_DATABASE`、`JWT_SECRET_KEY` |
+
+混合模式下 Docker 容器映射端口：MySQL → `127.0.0.1:13306`，Redis → `127.0.0.1:16379`，在 `.env.dev` 中对应填写。
