@@ -180,7 +180,8 @@ config_key 命名：<模块前缀>.<参数名>
 
 | 文件 | 需改内容 |
 |------|---------|
-| `docker-compose.my.yml` / `.pg.yml` | 所有 `ruoyi-*` service名、container_name、image名、network名、MYSQL_DATABASE 改为项目名 |
-| `ruoyi-fastapi-backend/.env.dockermy` / `.env.dockerpg` | `APP_NAME`、`LOG_SERVICE_NAME`、`DB_DATABASE`、`JWT_SECRET_KEY` |
+| `docker-compose.my.yml` / `.pg.yml` | 所有 `ruoyi-*` service名、container_name、network名、MYSQL_DATABASE/POSTGRES_DB 改为项目名；**image名必须全小写**（如 `newscms-frontend:latest`） |
+| `ruoyi-fastapi-backend/.env.dockermy` / `.env.dockerpg` | `APP_NAME`、`LOG_SERVICE_NAME`、`DB_DATABASE`、`DB_PASSWORD`、`JWT_SECRET_KEY` |
+| `ruoyi-fastapi-frontend/bin/nginx.dockermy.conf` / `nginx.dockerpg.conf` | `proxy_pass` 里的 `ruoyi-backend-my` / `ruoyi-backend-pg` 改为 `<project_name>-backend-my/pg`（文件内有 ⚠️ 注释提示） |
 
 混合模式下 Docker 容器映射端口：MySQL → `127.0.0.1:13306`，Redis → `127.0.0.1:16379`，在 `.env.dev` 中对应填写。

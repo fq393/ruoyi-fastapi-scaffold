@@ -34,7 +34,7 @@ services:
 
   # PostgreSQL服务
   ruoyi-pg:
-    image: postgres:14
+    image: docker.1ms.run/postgres:14
     container_name: ruoyi-pg
     environment:
       POSTGRES_PASSWORD: root
@@ -54,7 +54,7 @@ services:
 
   # Redis服务
   ruoyi-redis:
-    image: redis:latest
+    image: docker.1ms.run/redis:latest
     container_name: ruoyi-redis
     ports:
       - "16379:6379"
