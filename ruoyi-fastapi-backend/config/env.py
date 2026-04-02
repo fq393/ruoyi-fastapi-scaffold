@@ -243,12 +243,15 @@ class GetConfig:
         """
         # 检查是否在alembic环境中运行，如果是则跳过参数解析
         if 'alembic' in sys.argv[0] or any('alembic' in arg for arg in sys.argv):
-            ini_config = configparser.ConfigParser()
-            ini_config.read('alembic.ini', encoding='utf-8')
-            if 'settings' in ini_config:
-                # 获取env选项
-                env_value = ini_config['settings'].get('env')
-                os.environ['APP_ENV'] = env_value if env_value else 'dev'
+            # migrate.py 会通过 APP_ENV 环境变量传入 env，优先使用；
+            # 否则回退到读取 alembic.ini [settings] env
+            if not os.environ.get('APP_ENV'):
+                ini_config = configparser.ConfigParser()
+                ini_config.read('alembic.ini', encoding='utf-8')
+                if 'settings' in ini_config:
+                    # 获取env选项
+                    env_value = ini_config['settings'].get('env')
+                    os.environ['APP_ENV'] = env_value if env_value else 'dev'
         elif 'uvicorn' in sys.argv[0]:
             # 使用uvicorn启动时，命令行参数需要按照uvicorn的文档进行配置，无法自定义参数
             pass
