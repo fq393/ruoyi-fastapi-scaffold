@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Project initialization script. Run once after cloning:
+Project initialization script. Run once after cloning.
 
-    python init.py
+Non-interactive (recommended — used by Claude):
+    python3 init.py --name mycms --cn 内容管理系统 --db-type mysql --db-pass secret
 
-Replaces all ruoyi/vfadmin placeholders with your project name,
-and generates a fresh JWT secret key.
+Interactive (fallback):
+    python3 init.py
 """
+import argparse
 import re
 import secrets
 import sys
@@ -39,34 +41,48 @@ def patch(path: Path, replacements: list) -> bool:
 
 
 def main() -> None:
-    print('\n=== RuoYi FastAPI Scaffold — Project Initialization ===\n')
+    parser = argparse.ArgumentParser(description='Initialize ruoyi-fastapi-scaffold project')
+    parser.add_argument('--name',    help='Project name in English (lowercase)')
+    parser.add_argument('--cn',      help='Project name in Chinese')
+    parser.add_argument('--db-type', choices=['mysql', 'postgresql'], default=None)
+    parser.add_argument('--db-pass', default=None, help='Database password')
+    parser.add_argument('--footer',  default='', help='Footer copyright text (empty = hidden)')
+    args = parser.parse_args()
 
-    name = ask('项目英文名 (lowercase, e.g. mycms)').lower().strip()
-    if not name:
-        print('Error: project name is required'); sys.exit(1)
+    non_interactive = args.name and args.cn
 
-    cn = ask('项目中文名 (e.g. 内容管理系统)').strip()
-    if not cn:
-        print('Error: chinese name is required'); sys.exit(1)
+    if non_interactive:
+        name    = args.name.lower().strip()
+        cn      = args.cn.strip()
+        db_type = args.db_type or 'mysql'
+        db_pass = args.db_pass or 'mysqlroot'
+        footer  = args.footer
+    else:
+        print('\n=== RuoYi FastAPI Scaffold — Project Initialization ===\n')
+        name = ask('项目英文名 (lowercase, e.g. mycms)').lower().strip()
+        if not name:
+            print('Error: project name is required'); sys.exit(1)
+        cn = ask('项目中文名 (e.g. 内容管理系统)').strip()
+        if not cn:
+            print('Error: chinese name is required'); sys.exit(1)
+        db_type = ask('数据库类型 (mysql/postgresql)', default='mysql').lower().strip()
+        if db_type not in ('mysql', 'postgresql'):
+            print('Error: db_type must be mysql or postgresql'); sys.exit(1)
+        db_pass = ask('数据库密码', default='mysqlroot')
+        footer  = ask('底部版权文字（留空则不显示）')
 
-    db_type = ask('数据库类型 (mysql/postgresql)', default='mysql').lower().strip()
-    if db_type not in ('mysql', 'postgresql'):
-        print('Error: db_type must be mysql or postgresql'); sys.exit(1)
-    db_pass = ask('数据库密码', default='mysqlroot')
-    footer  = ask('底部版权文字（留空则不显示）')
+        print(f'\n  英文名  : {name}')
+        print(f'  中文名  : {cn}')
+        print(f'  DB 类型 : {db_type}')
+        print(f'  DB 密码 : {db_pass}')
+        if footer:
+            print(f'  Footer  : {footer}')
+        if ask('\n确认? (y/n)', 'y').lower() != 'y':
+            print('Aborted.'); sys.exit(0)
+
     jwt_key = secrets.token_hex(32)
 
-    print(f'\n  英文名  : {name}')
-    print(f'  中文名  : {cn}')
-    print(f'  DB 类型 : {db_type}')
-    print(f'  DB 密码 : {db_pass}')
-    if footer:
-        print(f'  Footer  : {footer}')
-    print(f'  JWT key : {jwt_key[:8]}…（已生成）')
-    if ask('\n确认? (y/n)', 'y').lower() != 'y':
-        print('Aborted.'); sys.exit(0)
-
-    print('\n修改中…')
+    print(f'\n修改中… (project={name}, db={db_type})')
     changed: list[str] = []
 
     # ── Compiled patterns ────────────────────────────────────────────────────
@@ -76,18 +92,18 @@ def main() -> None:
     DB_PW_RE  = re.compile(r"DB_PASSWORD\s*=\s*'[^']*'")
     DB_TYPE_RE = re.compile(r"DB_TYPE\s*=\s*'[^']*'")
     LOG_RE    = re.compile(r"LOG_SERVICE_NAME\s*=\s*'[^']*'")
-    HMY_RE   = re.compile(r"DB_HOST\s*=\s*'ruoyi-mysql'")
-    HPG_RE   = re.compile(r"DB_HOST\s*=\s*'ruoyi-pg'")
-    REDIS_RE = re.compile(r"REDIS_HOST\s*=\s*'ruoyi-redis'")
+    HMY_RE    = re.compile(r"DB_HOST\s*=\s*'ruoyi-mysql'")
+    HPG_RE    = re.compile(r"DB_HOST\s*=\s*'ruoyi-pg'")
+    REDIS_RE  = re.compile(r"REDIS_HOST\s*=\s*'ruoyi-redis'")
     FOOTER_RE = re.compile(r'(VITE_APP_FOOTER\s*=\s*).*')
 
     jwt_new = f"JWT_SECRET_KEY = '{jwt_key}'"
     base_repls = [
-        (APP_RE,    f"APP_NAME = '{cn}'"),
-        (DB_DB_RE,  f"DB_DATABASE = '{name}'"),
+        (APP_RE,     f"APP_NAME = '{cn}'"),
+        (DB_DB_RE,   f"DB_DATABASE = '{name}'"),
         (DB_TYPE_RE, f"DB_TYPE = '{db_type}'"),
-        (LOG_RE,    f"LOG_SERVICE_NAME = '{name}-backend'"),
-        (JWT_RE,    jwt_new),
+        (LOG_RE,     f"LOG_SERVICE_NAME = '{name}-backend'"),
+        (JWT_RE,     jwt_new),
     ]
 
     # ── Frontend .env files ──────────────────────────────────────────────────
