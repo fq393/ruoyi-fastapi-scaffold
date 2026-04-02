@@ -49,16 +49,13 @@ def main() -> None:
     if not cn:
         print('Error: chinese name is required'); sys.exit(1)
 
-    db_pass   = ask('数据库密码', default='mysqlroot')
-    slogan    = ask('首页 Slogan（\\n 表示换行，留空保持默认）')
-    footer    = ask('底部版权文字（留空则不显示）')
-    jwt_key   = secrets.token_hex(32)
+    db_pass = ask('数据库密码', default='mysqlroot')
+    footer  = ask('底部版权文字（留空则不显示）')
+    jwt_key = secrets.token_hex(32)
 
     print(f'\n  英文名  : {name}')
     print(f'  中文名  : {cn}')
     print(f'  DB 密码 : {db_pass}')
-    if slogan:
-        print(f'  Slogan  : {slogan}')
     if footer:
         print(f'  Footer  : {footer}')
     print(f'  JWT key : {jwt_key[:8]}…（已生成）')
@@ -69,18 +66,17 @@ def main() -> None:
     changed: list[str] = []
 
     # ── Compiled patterns ────────────────────────────────────────────────────
-    JWT_RE      = re.compile(r"JWT_SECRET_KEY\s*=\s*'[^']*'")
-    APP_RE      = re.compile(r"APP_NAME\s*=\s*'[^']*'")
-    DB_DB_RE    = re.compile(r"DB_DATABASE\s*=\s*'[^']*'")
-    DB_PW_RE    = re.compile(r"DB_PASSWORD\s*=\s*'[^']*'")
-    LOG_RE      = re.compile(r"LOG_SERVICE_NAME\s*=\s*'[^']*'")
-    HMY_RE      = re.compile(r"DB_HOST\s*=\s*'ruoyi-mysql'")
-    HPG_RE      = re.compile(r"DB_HOST\s*=\s*'ruoyi-pg'")
-    REDIS_RE    = re.compile(r"REDIS_HOST\s*=\s*'ruoyi-redis'")
-    SLOGAN_RE   = re.compile(r'(VITE_APP_DASHBOARD_SLOGAN\s*=\s*).*')
-    FOOTER_RE   = re.compile(r'(VITE_APP_FOOTER\s*=\s*).*')
+    JWT_RE   = re.compile(r"JWT_SECRET_KEY\s*=\s*'[^']*'")
+    APP_RE   = re.compile(r"APP_NAME\s*=\s*'[^']*'")
+    DB_DB_RE = re.compile(r"DB_DATABASE\s*=\s*'[^']*'")
+    DB_PW_RE = re.compile(r"DB_PASSWORD\s*=\s*'[^']*'")
+    LOG_RE   = re.compile(r"LOG_SERVICE_NAME\s*=\s*'[^']*'")
+    HMY_RE   = re.compile(r"DB_HOST\s*=\s*'ruoyi-mysql'")
+    HPG_RE   = re.compile(r"DB_HOST\s*=\s*'ruoyi-pg'")
+    REDIS_RE = re.compile(r"REDIS_HOST\s*=\s*'ruoyi-redis'")
+    FOOTER_RE = re.compile(r'(VITE_APP_FOOTER\s*=\s*).*')
 
-    jwt_new  = f"JWT_SECRET_KEY = '{jwt_key}'"
+    jwt_new = f"JWT_SECRET_KEY = '{jwt_key}'"
     base_repls = [
         (APP_RE,   f"APP_NAME = '{cn}'"),
         (DB_DB_RE, f"DB_DATABASE = '{name}'"),
@@ -91,8 +87,6 @@ def main() -> None:
     # ── Frontend .env files ──────────────────────────────────────────────────
     fe_envs = ['.env.development', '.env.docker', '.env.production', '.env.staging']
     fe_repls = [('vfadmin管理系统', f'{cn}管理系统'), (JWT_RE, jwt_new)]
-    if slogan:
-        fe_repls.append((SLOGAN_RE, rf'\g<1>{slogan}'))
     if footer:
         fe_repls.append((FOOTER_RE, rf'\g<1>{footer}'))
     for fname in fe_envs:
