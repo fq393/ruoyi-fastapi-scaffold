@@ -1,6 +1,7 @@
+from datetime import datetime
 from urllib.parse import quote_plus
 
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Column, DateTime, Engine, String, create_engine
 from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -107,3 +108,22 @@ AsyncSessionLocal = create_async_session_local(async_engine)
 
 class Base(AsyncAttrs, DeclarativeBase):
     pass
+
+
+
+class AuditMixin:
+    """
+    审计字段 Mixin — 需要记录创建/修改信息的 DO 继承此类，无需重复声明。
+
+        class NewsInfo(Base, AuditMixin):
+            __tablename__ = 'news_info'
+            news_id = Column(BigInteger, primary_key=True, ...)
+
+    注意：default=datetime.now（不加括号），每次 INSERT 时才求值。
+    若写成 datetime.now() 则全部行共享类加载时刻的时间。
+    """
+    create_by   = Column(String(64), nullable=True, server_default="''", comment='创建者')
+    create_time = Column(DateTime,   nullable=True, default=datetime.now,                   comment='创建时间')
+    update_by   = Column(String(64), nullable=True, server_default="''", comment='更新者')
+    update_time = Column(DateTime,   nullable=True, default=datetime.now,
+                         onupdate=datetime.now, comment='更新时间')
