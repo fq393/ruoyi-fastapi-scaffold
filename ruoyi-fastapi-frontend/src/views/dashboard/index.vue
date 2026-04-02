@@ -261,6 +261,9 @@ function simulate() {
   const container = stageRef.value
   if (!container) return
 
+  const draggedSet = new Set()
+  for (const d of drags.values()) draggedSet.add(d.idx)
+
   elapsed += FIXED_DT
 
   if (physState === 'entry') {
@@ -334,7 +337,7 @@ function simulate() {
 
   for (let i = 0; i < letters.length; i++) {
     const l = letters[i]
-    if (l.locked || isDragged(i)) continue
+    if (l.locked || draggedSet.has(i)) continue
 
     let fx = 0, fy = 0
 
@@ -348,7 +351,7 @@ function simulate() {
         fx += (mdx / mdist) * mag
         fy += (mdy / mdist) * mag
       }
-      if (!isDragged(i)) {
+      if (!draggedSet.has(i)) {
         fx += (l.ox - l.x) * REPULSE_SPRING_K
         fy += (l.oy - l.y) * REPULSE_SPRING_K
       }
@@ -370,8 +373,8 @@ function simulate() {
       const dx = bx - ax, dy = by - ay
       const dist = Math.hypot(dx, dy) || 0.001
       const diff = (dist - restLengths[i]) / dist
-      const aF = a.locked || isDragged(i)
-      const bF = b.locked || isDragged(i + 1)
+      const aF = a.locked || draggedSet.has(i)
+      const bF = b.locked || draggedSet.has(i + 1)
       if (aF && !bF)       { b.x -= dx * diff;         b.y -= dy * diff }
       else if (!aF && bF)  { a.x += dx * diff;         a.y += dy * diff }
       else                 { a.x += dx*diff*0.5; a.y += dy*diff*0.5; b.x -= dx*diff*0.5; b.y -= dy*diff*0.5 }
@@ -389,8 +392,8 @@ function simulate() {
       const dist = Math.hypot(dx, dy) || 0.001
       if (dist < RADIUS * 2) {
         const ov = (RADIUS * 2 - dist) / dist * 0.5
-        if (isDragged(i))      { b.x += dx * ov; b.y += dy * ov }
-        else if (isDragged(j)) { a.x -= dx * ov; a.y -= dy * ov }
+        if (draggedSet.has(i))      { b.x += dx * ov; b.y += dy * ov }
+        else if (draggedSet.has(j)) { a.x -= dx * ov; a.y -= dy * ov }
         else { a.x -= dx * ov; a.y -= dy * ov; b.x += dx * ov; b.y += dy * ov }
       }
     }
@@ -399,11 +402,11 @@ function simulate() {
   const cw = container.clientWidth, ch = container.clientHeight
   for (let i = 0; i < letters.length; i++) {
     const l = letters[i]
-    if (l.locked || isDragged(i)) continue
-    if (l.x < 0)                { l.x = 0;              l.px = l.x + (l.x - l.px) * BOUNCE }
-    if (l.x + l.w > cw)         { l.x = cw - l.w;       l.px = l.x + (l.x - l.px) * BOUNCE }
-    if (l.y < 0)                { l.y = 0;              l.py = l.y + (l.y - l.py) * BOUNCE }
-    if (l.y + LINE_HEIGHT > ch) { l.y = ch - LINE_HEIGHT; l.py = l.y + (l.y - l.py) * BOUNCE }
+    if (l.locked || draggedSet.has(i)) continue
+    if (l.x < 0)                { const vx = l.x - l.px; l.x = 0;              l.px = l.x + vx * BOUNCE }
+    if (l.x + l.w > cw)         { const vx = l.x - l.px; l.x = cw - l.w;       l.px = l.x + vx * BOUNCE }
+    if (l.y < 0)                { const vy = l.y - l.py; l.y = 0;              l.py = l.y + vy * BOUNCE }
+    if (l.y + LINE_HEIGHT > ch) { const vy = l.y - l.py; l.y = ch - LINE_HEIGHT; l.py = l.y + vy * BOUNCE }
   }
 }
 
