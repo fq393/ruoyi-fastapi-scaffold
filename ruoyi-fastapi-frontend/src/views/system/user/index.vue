@@ -40,7 +40,7 @@
               ref="queryRef"
               :inline="true"
               v-show="showSearch"
-              label-width="68px"
+              label-width="88px"
             >
               <el-form-item label="用户名称" prop="userName">
                 <el-input
