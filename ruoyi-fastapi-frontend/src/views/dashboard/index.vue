@@ -1,752 +1,558 @@
 <template>
-  <div>
-    <AConfigProvider
-      :theme="{
-        algorithm: settingsStore.isDark
-          ? theme.darkAlgorithm
-          : theme.defaultAlgorithm,
-      }"
-    >
-      <div class="pageHeaderContent">
-        <div class="avatar">
-          <a-avatar size="large" :src="currentUser.avatar" />
+  <div class="dashboard">
+    <!-- Physics animation hero -->
+    <div class="hero" ref="heroRef">
+      <div class="text-stage" ref="stageRef"></div>
+      <transition name="fade">
+        <div v-if="!hintHidden" class="hint">
+          拖拽末尾字符 · 按 <kbd>F</kbd> 键或
+          <span class="hint-btn" @click="triggerRelease">点击释放</span>
         </div>
-        <div class="content">
-          <div class="contentTitle">
-            早安，
-            {{ currentUser.name }}
-            ，祝你开心每一天！
-          </div>
-          <div>{{ currentUser.title }} |{{ currentUser.group }}</div>
-        </div>
-        <div class="extraContent">
-          <div class="statItem">
-            <a-statistic title="项目数" :value="56" />
-          </div>
-          <div class="statItem">
-            <a-statistic title="团队内排名" :value="8" suffix="/ 24" />
-          </div>
-          <div class="statItem">
-            <a-statistic title="项目访问" :value="2223" />
-          </div>
-        </div>
-      </div>
+      </transition>
+    </div>
 
-      <div style="padding: 10px">
-        <a-row :gutter="24">
-          <a-col :xl="16" :lg="24" :md="24" :sm="24" :xs="24">
-            <a-card
-              class="projectList"
-              :style="{ marginBottom: '24px' }"
-              title="进行中的项目"
-              :bordered="false"
-              :loading="false"
-              :body-style="{ padding: 0 }"
-            >
-              <template #extra>
-                <a href="">
-                  <span style="color: var(--el-color-primary)">全部项目</span>
-                </a>
-              </template>
-              <a-card-grid
-                v-for="item in projectNotice"
-                :key="item.id"
-                class="projectGrid"
-              >
-                <a-card
-                  :body-style="{ padding: 0 }"
-                  style="box-shadow: none"
-                  :bordered="false"
-                >
-                  <a-card-meta :description="item.description" class="w-full">
-                    <template #title>
-                      <div class="cardTitle">
-                        <a-avatar size="small" :src="item.logo" />
-                        <a :href="item.href">
-                          {{ item.title }}
-                        </a>
-                      </div>
-                    </template>
-                  </a-card-meta>
-                  <div class="projectItemContent">
-                    <a :href="item.memberLink">
-                      {{ item.member || "" }}
-                    </a>
-                    <span class="datetime" ml-2 :title="item.updatedAt">
-                      {{ item.updatedAt }}
-                    </span>
-                  </div>
-                </a-card>
-              </a-card-grid>
-            </a-card>
-            <a-card
-              :body-style="{ padding: 0 }"
-              :bordered="false"
-              class="activeCard"
-              title="动态"
-              :loading="false"
-            >
-              <a-list :data-source="activities" class="activitiesList">
-                <template #renderItem="{ item }">
-                  <a-list-item :key="item.id">
-                    <a-list-item-meta>
-                      <template #title>
-                        <span>
-                          <a class="username">{{ item.user.name }}</a
-                          >&nbsp;
-                          <span class="event">
-                            <span>{{ item.template1 }}</span
-                            >&nbsp;
-                            <a href="" style="color: var(--el-color-primary)">
-                              {{ item?.group?.name }} </a
-                            >&nbsp; <span>{{ item.template2 }}</span
-                            >&nbsp;
-                            <a href="" style="color: var(--el-color-primary)">
-                              {{ item?.project?.name }}
-                            </a>
-                          </span>
-                        </span>
-                      </template>
-                      <template #avatar>
-                        <a-avatar :src="item.user.avatar" />
-                      </template>
-                      <template #description>
-                        <span class="datetime" :title="item.updatedAt">
-                          {{ item.updatedAt }}
-                        </span>
-                      </template>
-                    </a-list-item-meta>
-                  </a-list-item>
-                </template>
-              </a-list>
-            </a-card>
-          </a-col>
-          <a-col :xl="8" :lg="24" :md="24" :sm="24" :xs="24">
-            <a-card
-              :style="{ marginBottom: '24px' }"
-              title="快速开始 / 便捷导航"
-              :bordered="false"
-              :body-style="{ padding: 0 }"
-            >
-              <EditableLinkGroup />
-            </a-card>
-            <a-card
-              :style="{ marginBottom: '24px' }"
-              :bordered="false"
-              title="XX 指数"
-            >
-              <div class="chart">
-                <div ref="radarContainer" />
-              </div>
-            </a-card>
-            <a-card
-              :body-style="{ paddingTop: '12px', paddingBottom: '12px' }"
-              :bordered="false"
-              title="团队"
-            >
-              <div class="members">
-                <a-row :gutter="48">
-                  <a-col
-                    v-for="item in projectNotice"
-                    :key="`members-item-${item.id}`"
-                    :span="12"
-                  >
-                    <a :href="item.href">
-                      <a-avatar :src="item.logo" size="small" />
-                      <span class="member">{{ item.member }}</span>
-                    </a>
-                  </a-col>
-                </a-row>
-              </div>
-            </a-card>
-          </a-col>
-        </a-row>
-      </div>
-    </AConfigProvider>
+    <!-- Info section -->
+    <div class="info-section">
+      <!-- Welcome card -->
+      <el-card class="welcome-card" shadow="never">
+        <div class="welcome-inner">
+          <img :src="userStore.avatar" class="user-avatar" />
+          <div class="welcome-text">
+            <div class="greeting">{{ greeting }}，{{ userStore.nickName }}</div>
+            <div class="sub-info">
+              <span>{{ datetimeStr }}</span>
+            </div>
+          </div>
+        </div>
+      </el-card>
+
+      <!-- Quick nav -->
+      <el-card class="nav-card" shadow="never" header="快捷导航">
+        <div class="nav-grid">
+          <router-link
+            v-for="link in quickLinks"
+            :key="link.to"
+            :to="link.to"
+            class="nav-item"
+          >
+            <svg-icon :icon-class="link.icon" class="nav-icon" />
+            <span>{{ link.label }}</span>
+          </router-link>
+        </div>
+      </el-card>
+    </div>
   </div>
 </template>
 
-<script>
-import {
-  Statistic,
-  Row,
-  Col,
-  Card,
-  CardGrid,
-  CardMeta,
-  List,
-  ListItem,
-  ListItemMeta,
-  Avatar,
-  ConfigProvider,
-  theme,
-} from "ant-design-vue";
-import "ant-design-vue/dist/reset.css";
-
-export default {
-  components: {
-    AStatistic: Statistic,
-    ARow: Row,
-    ACol: Col,
-    ACard: Card,
-    ACardGrid: CardGrid,
-    ACardMeta: CardMeta,
-    AList: List,
-    AListItem: ListItem,
-    AListItemMeta: ListItemMeta,
-    AAvatar: Avatar,
-    AConfigProvider: ConfigProvider,
-  },
-};
-</script>
-
 <script setup>
-import { Radar } from "@antv/g2plot";
-import EditableLinkGroup from "./editable-link-group.vue";
-import useSettingsStore from "@/store/modules/settings";
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import useUserStore from '@/store/modules/user'
 
-const settingsStore = useSettingsStore();
+defineOptions({ name: 'Dashboard' })
 
-defineOptions({
-  name: "DashBoard",
-});
+const userStore = useUserStore()
+const heroRef = ref(null)
+const stageRef = ref(null)
+const hintHidden = ref(false)
 
-const currentUser = {
-  avatar: "https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png",
-  name: "吴彦祖",
-  userid: "00000001",
-  email: "antdesign@alipay.com",
-  signature: "海纳百川，有容乃大",
-  title: "交互专家",
-  group: "蚂蚁金服－某某某事业群－某某平台部－某某技术部－UED",
-};
+// ── Greeting & clock ─────────────────────────────────────────────────────────
 
-const projectNotice = [
-  {
-    id: "xxx1",
-    title: "Alipay",
-    logo: "https://gw.alipayobjects.com/zos/rmsportal/WdGqmHpayyMjiEhcKoVE.png",
-    description: "那是一种内在的东西，他们到达不了，也无法触及的",
-    updatedAt: "几秒前",
-    member: "科学搬砖组",
-    href: "",
-    memberLink: "",
-  },
-  {
-    id: "xxx2",
-    title: "Angular",
-    logo: "https://gw.alipayobjects.com/zos/rmsportal/zOsKZmFRdUtvpqCImOVY.png",
-    description: "希望是一个好东西，也许是最好的，好东西是不会消亡的",
-    updatedAt: "6 年前",
-    member: "全组都是吴彦祖",
-    href: "",
-    memberLink: "",
-  },
-  {
-    id: "xxx3",
-    title: "Ant Design",
-    logo: "https://gw.alipayobjects.com/zos/rmsportal/dURIMkkrRFpPgTuzkwnB.png",
-    description: "城镇中有那么多的酒馆，她却偏偏走进了我的酒馆",
-    updatedAt: "几秒前",
-    member: "中二少女团",
-    href: "",
-    memberLink: "",
-  },
-  {
-    id: "xxx4",
-    title: "Ant Design Pro",
-    logo: "https://gw.alipayobjects.com/zos/rmsportal/sfjbOqnsXXJgNCjCzDBL.png",
-    description: "那时候我只会想自己想要什么，从不想自己拥有什么",
-    updatedAt: "6 年前",
-    member: "程序员日常",
-    href: "",
-    memberLink: "",
-  },
-  {
-    id: "xxx5",
-    title: "Bootstrap",
-    logo: "https://gw.alipayobjects.com/zos/rmsportal/siCrBXXhmvTQGWPNLBow.png",
-    description: "凛冬将至",
-    updatedAt: "6 年前",
-    member: "高逼格设计天团",
-    href: "",
-    memberLink: "",
-  },
-  {
-    id: "xxx6",
-    title: "React",
-    logo: "https://gw.alipayobjects.com/zos/rmsportal/kZzEzemZyKLKFsojXItE.png",
-    description: "生命就像一盒巧克力，结果往往出人意料",
-    updatedAt: "6 年前",
-    member: "骗你来学计算机",
-    href: "",
-    memberLink: "",
-  },
-];
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 6) return '夜深了'
+  if (h < 12) return '早上好'
+  if (h < 14) return '中午好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+})
 
-const activities = [
-  {
-    id: "trend-1",
-    updatedAt: "几秒前",
-    user: {
-      name: "曲丽丽",
-      avatar:
-        "https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png",
-    },
-    group: {
-      name: "高逼格设计天团",
-      link: "http://github.com/",
-    },
-    project: {
-      name: "六月迭代",
-      link: "http://github.com/",
-    },
-    template1: "在",
-    template2: "新建项目",
-  },
-  {
-    id: "trend-2",
-    updatedAt: "几秒前",
-    user: {
-      name: "付小小",
-      avatar:
-        "https://gw.alipayobjects.com/zos/rmsportal/cnrhVkzwxjPwAaCfPbdc.png",
-    },
-    group: {
-      name: "高逼格设计天团",
-      link: "http://github.com/",
-    },
-    project: {
-      name: "六月迭代",
-      link: "http://github.com/",
-    },
-    template1: "在",
-    template2: "新建项目",
-  },
-  {
-    id: "trend-3",
-    updatedAt: "几秒前",
-    user: {
-      name: "林东东",
-      avatar:
-        "https://gw.alipayobjects.com/zos/rmsportal/gaOngJwsRYRaVAuXXcmB.png",
-    },
-    group: {
-      name: "中二少女团",
-      link: "http://github.com/",
-    },
-    project: {
-      name: "六月迭代",
-      link: "http://github.com/",
-    },
-    template1: "在",
-    template2: "新建项目",
-  },
-  {
-    id: "trend-4",
-    updatedAt: "几秒前",
-    user: {
-      name: "周星星",
-      avatar:
-        "https://gw.alipayobjects.com/zos/rmsportal/WhxKECPNujWoWEFNdnJE.png",
-    },
-    group: {
-      name: "5 月日常迭代",
-      link: "http://github.com/",
-    },
-    template1: "将",
-    template2: "更新至已发布状态",
-  },
-  {
-    id: "trend-5",
-    updatedAt: "几秒前",
-    user: {
-      name: "朱偏右",
-      avatar:
-        "https://gw.alipayobjects.com/zos/rmsportal/ubnKSIfAJTxIgXOKlciN.png",
-    },
-    group: {
-      name: "工程效能",
-      link: "http://github.com/",
-    },
-    project: {
-      name: "留言",
-      link: "http://github.com/",
-    },
-    template1: "在",
-    template2: "发布了",
-  },
-  {
-    id: "trend-6",
-    updatedAt: "几秒前",
-    user: {
-      name: "乐哥",
-      avatar:
-        "https://gw.alipayobjects.com/zos/rmsportal/jZUIxmJycoymBprLOUbT.png",
-    },
-    group: {
-      name: "程序员日常",
-      link: "http://github.com/",
-    },
-    project: {
-      name: "品牌迭代",
-      link: "http://github.com/",
-    },
-    template1: "在",
-    template2: "新建项目",
-  },
-];
+const datetimeStr = ref('')
+let clockTimer = null
 
-const radarContainer = ref();
-const radarData = [
-  {
-    name: "个人",
-    label: "引用",
-    value: 10,
-  },
-  {
-    name: "个人",
-    label: "口碑",
-    value: 8,
-  },
-  {
-    name: "个人",
-    label: "产量",
-    value: 4,
-  },
-  {
-    name: "个人",
-    label: "贡献",
-    value: 5,
-  },
-  {
-    name: "个人",
-    label: "热度",
-    value: 7,
-  },
-  {
-    name: "团队",
-    label: "引用",
-    value: 3,
-  },
-  {
-    name: "团队",
-    label: "口碑",
-    value: 9,
-  },
-  {
-    name: "团队",
-    label: "产量",
-    value: 6,
-  },
-  {
-    name: "团队",
-    label: "贡献",
-    value: 3,
-  },
-  {
-    name: "团队",
-    label: "热度",
-    value: 1,
-  },
-  {
-    name: "部门",
-    label: "引用",
-    value: 4,
-  },
-  {
-    name: "部门",
-    label: "口碑",
-    value: 1,
-  },
-  {
-    name: "部门",
-    label: "产量",
-    value: 6,
-  },
-  {
-    name: "部门",
-    label: "贡献",
-    value: 5,
-  },
-  {
-    name: "部门",
-    label: "热度",
-    value: 7,
-  },
-];
-let radar;
+function updateClock() {
+  const now = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  datetimeStr.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+}
+
+// ── Quick links ───────────────────────────────────────────────────────────────
+
+const quickLinks = [
+  { to: '/system/user',   icon: 'peoples',  label: '用户管理' },
+  { to: '/system/role',   icon: 'role',     label: '角色管理' },
+  { to: '/system/menu',   icon: 'tree-table', label: '菜单管理' },
+  { to: '/system/dept',   icon: 'tree',     label: '部门管理' },
+  { to: '/system/dict',   icon: 'dict',     label: '字典管理' },
+  { to: '/user/profile',  icon: 'user',     label: '个人中心' },
+]
+
+// ── Physics simulation ────────────────────────────────────────────────────────
+
+const CONSTRAINT_DIST = 1.25
+const UNLOCK_THRESHOLD = 1
+const ITERATIONS = 12
+const DAMPING = 0.97
+const GRAVITY = 0.18
+const BOUNCE = 0.4
+const RADIUS = 9
+const FIXED_DT = 1 / 120
+const MAX_STEPS = 4
+
+let FONT = 'bold 56px system-ui, sans-serif'
+let LINE_HEIGHT = 68
+
+let letters = []
+let restLengths = []
+let els = []
+let gravityOn = false
+let unraveling = false
+let unravelIdx = -1
+let rafId = null
+let lastTime = -1
+let accumulator = 0
+const drags = new Map()
+
+function isDragged(idx) {
+  for (const d of drags.values()) if (d.idx === idx) return true
+  return false
+}
+
+function pickFont(width) {
+  if (width < 400) return 'bold 28px system-ui, sans-serif'
+  if (width < 700) return 'bold 40px system-ui, sans-serif'
+  return 'bold 56px system-ui, sans-serif'
+}
+
+function initPhysics() {
+  const container = stageRef.value
+  if (!container) return
+
+  container.innerHTML = ''
+  els = []
+  letters = []
+  drags.clear()
+  gravityOn = false
+  unraveling = false
+  unravelIdx = -1
+  hintHidden.value = false
+
+  FONT = pickFont(container.clientWidth)
+  LINE_HEIGHT = Math.round(parseInt(FONT) * 1.25)
+
+  const title = import.meta.env.VITE_APP_TITLE || '管理系统'
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  ctx.font = FONT
+
+  const chars = [...title]
+  const widths = chars.map(ch => ctx.measureText(ch).width)
+  const totalW = widths.reduce((a, b) => a + b, 0)
+  const startX = Math.max(0, (container.clientWidth - totalW) / 2)
+  const startY = Math.max(0, (container.clientHeight - LINE_HEIGHT) / 2)
+
+  let x = startX
+  letters = chars.map((ch, i) => {
+    const w = widths[i]
+    const l = { ch, w, x, y: startY, ox: x, oy: startY, px: x, py: startY, locked: true }
+    x += w
+    return l
+  })
+
+  restLengths = []
+  for (let i = 0; i < letters.length - 1; i++) {
+    const a = letters[i], b = letters[i + 1]
+    const dist = Math.hypot(
+      (b.ox + b.w / 2) - (a.ox + a.w / 2),
+      (b.oy + LINE_HEIGHT / 2) - (a.oy + LINE_HEIGHT / 2)
+    )
+    restLengths.push(dist * CONSTRAINT_DIST)
+  }
+
+  for (const l of letters) {
+    const span = document.createElement('span')
+    span.className = 'phys-letter'
+    span.textContent = l.ch
+    span.style.cssText = `position:absolute;top:0;left:0;font:${FONT};line-height:${LINE_HEIGHT}px;user-select:none;cursor:default;will-change:transform;transform:translate(${l.x}px,${l.y}px)`
+    container.appendChild(span)
+    els.push(span)
+  }
+
+  // Unlock last few chars as draggable entry points
+  const n = Math.min(5, letters.length)
+  const lastIdx = letters.length - 1
+  for (let i = lastIdx; i > lastIdx - n; i--) {
+    if (i < 0) break
+    letters[i].locked = false
+    els[i].style.cursor = 'grab'
+  }
+}
+
+function simulate() {
+  const container = stageRef.value
+  if (!container) return
+
+  // Progressively unlock chars via unravel sequence
+  if (unraveling) {
+    if (!gravityOn || unravelIdx < 0) {
+      unraveling = false
+    } else if (letters[unravelIdx].locked) {
+      letters[unravelIdx].locked = false
+      letters[unravelIdx].px = letters[unravelIdx].x
+      letters[unravelIdx].py = letters[unravelIdx].y - 0.5
+      unravelIdx--
+    } else {
+      unravelIdx--
+    }
+  }
+
+  // Chain tension unlocks neighbours
+  for (let i = letters.length - 2; i >= 0; i--) {
+    if (letters[i].locked && !letters[i + 1].locked) {
+      const a = letters[i], b = letters[i + 1]
+      const dx = (b.x + b.w / 2) - (a.ox + a.w / 2)
+      const dy = (b.y + LINE_HEIGHT / 2) - (a.oy + LINE_HEIGHT / 2)
+      if (Math.hypot(dx, dy) > restLengths[i] + UNLOCK_THRESHOLD) {
+        a.locked = false
+        a.px = a.x
+        a.py = a.y
+        hintHidden.value = true
+      }
+    }
+  }
+
+  // Verlet integration
+  for (let i = 0; i < letters.length; i++) {
+    const l = letters[i]
+    if (l.locked || isDragged(i)) continue
+    const vx = (l.x - l.px) * DAMPING
+    const vy = (l.y - l.py) * DAMPING
+    l.px = l.x
+    l.py = l.y
+    l.x += vx
+    l.y += vy + (gravityOn ? GRAVITY : 0)
+  }
+
+  // Distance constraints (Jakobsen iterations)
+  for (let iter = 0; iter < ITERATIONS; iter++) {
+    for (let i = 0; i < letters.length - 1; i++) {
+      const a = letters[i], b = letters[i + 1]
+      if (a.locked && b.locked) continue
+      const ax = a.x + a.w / 2, ay = a.y + LINE_HEIGHT / 2
+      const bx = b.x + b.w / 2, by = b.y + LINE_HEIGHT / 2
+      const dx = bx - ax, dy = by - ay
+      const dist = Math.hypot(dx, dy) || 0.001
+      const diff = (dist - restLengths[i]) / dist
+      const aF = a.locked || isDragged(i)
+      const bF = b.locked || isDragged(i + 1)
+      if (aF && !bF) {
+        b.x -= dx * diff; b.y -= dy * diff
+      } else if (!aF && bF) {
+        a.x += dx * diff; a.y += dy * diff
+      } else {
+        a.x += dx * diff * 0.5; a.y += dy * diff * 0.5
+        b.x -= dx * diff * 0.5; b.y -= dy * diff * 0.5
+      }
+    }
+  }
+
+  // Soft collision between non-adjacent chars
+  for (let i = 0; i < letters.length; i++) {
+    if (letters[i].locked) continue
+    const a = letters[i]
+    const acx = a.x + a.w / 2, acy = a.y + LINE_HEIGHT / 2
+    for (let j = i + 2; j < letters.length; j++) {
+      if (letters[j].locked) continue
+      const b = letters[j]
+      const dx = (b.x + b.w / 2) - acx
+      const dy = (b.y + LINE_HEIGHT / 2) - acy
+      const dist = Math.hypot(dx, dy) || 0.001
+      if (dist < RADIUS * 2) {
+        const ov = (RADIUS * 2 - dist) / dist * 0.5
+        if (isDragged(i)) { b.x += dx * ov; b.y += dy * ov }
+        else if (isDragged(j)) { a.x -= dx * ov; a.y -= dy * ov }
+        else { a.x -= dx * ov; a.y -= dy * ov; b.x += dx * ov; b.y += dy * ov }
+      }
+    }
+  }
+
+  // Boundary bounce
+  const cw = container.clientWidth
+  const ch = container.clientHeight
+  for (let i = 0; i < letters.length; i++) {
+    const l = letters[i]
+    if (l.locked || isDragged(i)) continue
+    if (l.x < 0) { l.x = 0; l.px = l.x + (l.x - l.px) * BOUNCE }
+    if (l.x + l.w > cw) { l.x = cw - l.w; l.px = l.x + (l.x - l.px) * BOUNCE }
+    if (l.y < 0) { l.y = 0; l.py = l.y + (l.y - l.py) * BOUNCE }
+    if (l.y + LINE_HEIGHT > ch) { l.y = ch - LINE_HEIGHT; l.py = l.y + (l.y - l.py) * BOUNCE }
+  }
+}
+
+function renderFrame(now) {
+  if (lastTime < 0) { lastTime = now; rafId = requestAnimationFrame(renderFrame); return }
+  const dt = Math.min((now - lastTime) / 1000, MAX_STEPS * FIXED_DT)
+  lastTime = now
+  accumulator += dt
+  while (accumulator >= FIXED_DT) { simulate(); accumulator -= FIXED_DT }
+  for (let i = 0; i < letters.length; i++) {
+    if (!letters[i].locked) els[i].style.cursor = els[i].style.cursor === 'grabbing' ? 'grabbing' : 'grab'
+    els[i].style.transform = `translate(${letters[i].x}px,${letters[i].y}px)`
+  }
+  rafId = requestAnimationFrame(renderFrame)
+}
+
+function triggerRelease() {
+  if (!gravityOn) {
+    gravityOn = true
+    unraveling = true
+    hintHidden.value = true
+    unravelIdx = letters.length - 1
+    while (unravelIdx >= 0 && !letters[unravelIdx].locked) unravelIdx--
+  } else {
+    // Second click: restore
+    gravityOn = false
+    initPhysics()
+  }
+}
+
+// ── Event handlers ────────────────────────────────────────────────────────────
+
+function onKeydown(e) {
+  if (e.key === 'f' || e.key === 'F') triggerRelease()
+}
+
+function onPointerDown(e) {
+  const idx = els.indexOf(e.target)
+  if (idx === -1 || letters[idx].locked) return
+  if (isDragged(idx)) return
+  const rect = stageRef.value.getBoundingClientRect()
+  drags.set(e.pointerId, {
+    idx,
+    offX: e.clientX - rect.left - letters[idx].x,
+    offY: e.clientY - rect.top - letters[idx].y,
+  })
+  els[idx].style.cursor = 'grabbing'
+  e.target.setPointerCapture(e.pointerId)
+  e.preventDefault()
+}
+
+function onPointerMove(e) {
+  const d = drags.get(e.pointerId)
+  if (!d) return
+  const rect = stageRef.value.getBoundingClientRect()
+  const l = letters[d.idx]
+  l.x = e.clientX - rect.left - d.offX
+  l.y = e.clientY - rect.top - d.offY
+  l.px = l.x; l.py = l.y
+  l.locked = false
+}
+
+function onPointerUp(e) {
+  const d = drags.get(e.pointerId)
+  if (!d) return
+  els[d.idx].style.cursor = 'grab'
+  drags.delete(e.pointerId)
+}
+
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+let resizeObs = null
+let resizeTimer = null
+
 onMounted(() => {
-  radar = new Radar(radarContainer.value, {
-    data: radarData,
-    xField: "label",
-    yField: "value",
-    seriesField: "name",
-    point: {
-      size: 4,
-    },
-    legend: {
-      layout: "horizontal",
-      position: "bottom",
-    },
-  });
-  radar.render();
-});
+  updateClock()
+  clockTimer = setInterval(updateClock, 1000)
+
+  initPhysics()
+  lastTime = -1
+  accumulator = 0
+  rafId = requestAnimationFrame(renderFrame)
+
+  window.addEventListener('keydown', onKeydown)
+  stageRef.value?.addEventListener('pointerdown', onPointerDown)
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerUp)
+
+  resizeObs = new ResizeObserver(() => {
+    clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(() => {
+      cancelAnimationFrame(rafId)
+      lastTime = -1
+      accumulator = 0
+      initPhysics()
+      rafId = requestAnimationFrame(renderFrame)
+    }, 150)
+  })
+  resizeObs.observe(heroRef.value)
+})
 
 onBeforeUnmount(() => {
-  radar?.destroy?.();
-});
+  cancelAnimationFrame(rafId)
+  clearInterval(clockTimer)
+  clearTimeout(resizeTimer)
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+  window.removeEventListener('pointercancel', onPointerUp)
+  resizeObs?.disconnect()
+})
 </script>
 
-<style scoped lang="less">
-.textOverflow() {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  word-break: break-all;
-}
-
-// mixins for clearfix
-// ------------------------
-.clearfix() {
-  zoom: 1;
-  &::before,
-  &::after {
-    display: table;
-    content: " ";
-  }
-  &::after {
-    clear: both;
-    height: 0;
-    font-size: 0;
-    visibility: hidden;
-  }
-}
-
-.activitiesList {
-  padding: 0 24px 8px 24px;
-  .username {
-    color: var(--el-text-color-regular);
-  }
-  .event {
-    font-weight: normal;
-  }
-}
-
-.pageHeaderContent {
+<style scoped lang="scss">
+.dashboard {
   display: flex;
-  padding: 12px;
-  margin-bottom: 24px;
-  box-shadow: var(--el-box-shadow-light);
-  .avatar {
-    flex: 0 1 72px;
-    & > span {
-      display: block;
-      width: 72px;
-      height: 72px;
-      border-radius: 72px;
-    }
-  }
-  .content {
-    position: relative;
-    top: 4px;
-    flex: 1 1 auto;
-    margin-left: 24px;
-    color: var(--el-text-color-secondary);
-    line-height: 22px;
-    .contentTitle {
-      margin-bottom: 12px;
-      color: var(--el-text-color-primary);
-      font-weight: 500;
-      font-size: 20px;
-      line-height: 28px;
-    }
+  flex-direction: column;
+  height: 100%;
+  min-height: calc(100vh - 84px);
+  padding: 16px;
+  box-sizing: border-box;
+  gap: 16px;
+}
+
+// ── Hero ──────────────────────────────────────────────────────────────────────
+
+.hero {
+  position: relative;
+  flex: 0 0 38vh;
+  min-height: 200px;
+  border-radius: 12px;
+  background: var(--el-fill-color-light);
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.text-stage {
+  position: absolute;
+  inset: 0;
+
+  :deep(.phys-letter) {
+    color: var(--el-text-color-primary);
+    white-space: pre;
   }
 }
 
-.extraContent {
-  .clearfix();
-
-  float: right;
-  white-space: nowrap;
-  .statItem {
-    position: relative;
-    display: inline-block;
-    padding: 0 32px;
-    > p:first-child {
-      margin-bottom: 4px;
-      color: var(--el-text-color-secondary);
-      font-size: 14px;
-      line-height: 22px;
-    }
-    > p {
-      margin: 0;
-      color: var(--el-text-color-primary);
-      font-size: 30px;
-      line-height: 38px;
-      > span {
-        color: var(--el-text-color-secondary);
-        font-size: 20px;
-      }
-    }
-    &::after {
-      position: absolute;
-      top: 8px;
-      right: 0;
-      width: 1px;
-      height: 40px;
-      background-color: var(--el-border-color);
-      content: "";
-    }
-    &:last-child {
-      padding-right: 0;
-      &::after {
-        display: none;
-      }
-    }
-  }
-}
-
-.members {
-  a {
-    display: block;
-    height: 24px;
-    margin: 12px 0;
-    color: var(--el-text-color-regular);
-    transition: all 0.3s;
-    .textOverflow();
-    .member {
-      margin-left: 12px;
-      font-size: 14px;
-      line-height: 24px;
-      vertical-align: top;
-    }
-    &:hover {
-      color: var(--el-color-primary);
-    }
-  }
-}
-
-.projectList {
-  :deep(.ant-card-meta-description) {
-    height: 44px;
-    overflow: hidden;
-    color: var(--el-text-color-secondary);
-    line-height: 22px;
-  }
-  .cardTitle {
-    font-size: 0;
-    a {
-      display: inline-block;
-      height: 24px;
-      margin-left: 12px;
-      color: var(--el-text-color-primary);
-      font-size: 14px;
-      line-height: 24px;
-      vertical-align: top;
-      &:hover {
-        color: var(--el-color-primary);
-      }
-    }
-  }
-  .projectGrid {
-    width: 33.33%;
-  }
-  .projectItemContent {
-    display: flex;
-    flex-basis: 100%;
-    height: 20px;
-    margin-top: 8px;
-    overflow: hidden;
-    font-size: 12px;
-    line-height: 20px;
-    .textOverflow();
-    a {
-      display: inline-block;
-      flex: 1 1 0;
-      color: var(--el-text-color-secondary);
-      .textOverflow();
-      &:hover {
-        color: var(--el-color-primary);
-      }
-    }
-    .datetime {
-      flex: 0 0 auto;
-      float: right;
-      color: var(--el-text-color-placeholder);
-    }
-  }
-}
-
-.datetime {
+.hint {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
   color: var(--el-text-color-placeholder);
-}
+  white-space: nowrap;
+  pointer-events: none;
 
-@media screen and (max-width: 1200px) and (min-width: 992px) {
-  .activeCard {
-    margin-bottom: 24px;
+  kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid var(--el-border-color);
+    border-radius: 3px;
+    font-size: 12px;
+    background: var(--el-fill-color);
   }
-  .members {
-    margin-bottom: 0;
-  }
-  .extraContent {
-    margin-left: -44px;
-    .statItem {
-      padding: 0 16px;
-    }
-  }
-}
 
-@media screen and (max-width: 992px) {
-  .activeCard {
-    margin-bottom: 24px;
-  }
-  .members {
-    margin-bottom: 0;
-  }
-  .extraContent {
-    float: none;
-    margin-right: 0;
-    .statItem {
-      padding: 0 16px;
-      text-align: left;
-      &::after {
-        display: none;
-      }
+  .hint-btn {
+    pointer-events: auto;
+    cursor: pointer;
+    color: var(--el-color-primary);
+
+    &:hover {
+      text-decoration: underline;
     }
   }
 }
 
-@media screen and (max-width: 768px) {
-  .extraContent {
-    margin-left: -16px;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.6s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// ── Info section ──────────────────────────────────────────────────────────────
+
+.info-section {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.welcome-card {
+  flex: 0 0 320px;
+
+  .welcome-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
   }
-  .projectList {
-    .projectGrid {
-      width: 50%;
+
+  .user-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .greeting {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 4px;
+  }
+
+  .sub-info {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.nav-card {
+  flex: 1;
+  min-width: 280px;
+
+  .nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 8px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--el-text-color-regular);
+    font-size: 13px;
+    transition: background 0.2s, color 0.2s;
+    border: 1px solid transparent;
+
+    &:hover {
+      background: var(--el-color-primary-light-9);
+      color: var(--el-color-primary);
+      border-color: var(--el-color-primary-light-7);
+    }
+
+    .nav-icon {
+      font-size: 24px;
     }
   }
 }
 
-@media screen and (max-width: 576px) {
-  .pageHeaderContent {
-    display: block;
-    .content {
-      margin-left: 0;
-    }
-  }
-  .extraContent {
-    .statItem {
-      float: none;
-    }
-  }
-}
+// ── Responsive ────────────────────────────────────────────────────────────────
 
-@media screen and (max-width: 480px) {
-  .projectList {
-    .projectGrid {
-      width: 100%;
-    }
+@media (max-width: 768px) {
+  .hero {
+    flex: 0 0 30vh;
+  }
+
+  .welcome-card {
+    flex: 1 1 100%;
   }
 }
 </style>
