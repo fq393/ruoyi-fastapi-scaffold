@@ -20,7 +20,6 @@
     "@ant-design/icons-vue": "^7.0.1",
     "@antv/g2plot": "^2.4.31",
     "@antv/infographic": "^0.2.13",
-    "@chenglou/pretext": "^0.0.4",
     "@element-plus/icons-vue": "2.3.2",
     "@vueup/vue-quill": "1.2.0",
     "@vueuse/core": "14.1.0",

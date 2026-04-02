@@ -49,12 +49,16 @@ def main() -> None:
     if not cn:
         print('Error: chinese name is required'); sys.exit(1)
 
+    db_type = ask('数据库类型 (mysql/postgresql)', default='mysql').lower().strip()
+    if db_type not in ('mysql', 'postgresql'):
+        print('Error: db_type must be mysql or postgresql'); sys.exit(1)
     db_pass = ask('数据库密码', default='mysqlroot')
     footer  = ask('底部版权文字（留空则不显示）')
     jwt_key = secrets.token_hex(32)
 
     print(f'\n  英文名  : {name}')
     print(f'  中文名  : {cn}')
+    print(f'  DB 类型 : {db_type}')
     print(f'  DB 密码 : {db_pass}')
     if footer:
         print(f'  Footer  : {footer}')
@@ -66,11 +70,12 @@ def main() -> None:
     changed: list[str] = []
 
     # ── Compiled patterns ────────────────────────────────────────────────────
-    JWT_RE   = re.compile(r"JWT_SECRET_KEY\s*=\s*'[^']*'")
-    APP_RE   = re.compile(r"APP_NAME\s*=\s*'[^']*'")
-    DB_DB_RE = re.compile(r"DB_DATABASE\s*=\s*'[^']*'")
-    DB_PW_RE = re.compile(r"DB_PASSWORD\s*=\s*'[^']*'")
-    LOG_RE   = re.compile(r"LOG_SERVICE_NAME\s*=\s*'[^']*'")
+    JWT_RE    = re.compile(r"JWT_SECRET_KEY\s*=\s*'[^']*'")
+    APP_RE    = re.compile(r"APP_NAME\s*=\s*'[^']*'")
+    DB_DB_RE  = re.compile(r"DB_DATABASE\s*=\s*'[^']*'")
+    DB_PW_RE  = re.compile(r"DB_PASSWORD\s*=\s*'[^']*'")
+    DB_TYPE_RE = re.compile(r"DB_TYPE\s*=\s*'[^']*'")
+    LOG_RE    = re.compile(r"LOG_SERVICE_NAME\s*=\s*'[^']*'")
     HMY_RE   = re.compile(r"DB_HOST\s*=\s*'ruoyi-mysql'")
     HPG_RE   = re.compile(r"DB_HOST\s*=\s*'ruoyi-pg'")
     REDIS_RE = re.compile(r"REDIS_HOST\s*=\s*'ruoyi-redis'")
@@ -78,10 +83,11 @@ def main() -> None:
 
     jwt_new = f"JWT_SECRET_KEY = '{jwt_key}'"
     base_repls = [
-        (APP_RE,   f"APP_NAME = '{cn}'"),
-        (DB_DB_RE, f"DB_DATABASE = '{name}'"),
-        (LOG_RE,   f"LOG_SERVICE_NAME = '{name}-backend'"),
-        (JWT_RE,   jwt_new),
+        (APP_RE,    f"APP_NAME = '{cn}'"),
+        (DB_DB_RE,  f"DB_DATABASE = '{name}'"),
+        (DB_TYPE_RE, f"DB_TYPE = '{db_type}'"),
+        (LOG_RE,    f"LOG_SERVICE_NAME = '{name}-backend'"),
+        (JWT_RE,    jwt_new),
     ]
 
     # ── Frontend .env files ──────────────────────────────────────────────────
